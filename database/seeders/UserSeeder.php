@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
         $superAdmin = User::create([
             'name'     => 'Super Admin',
             'email'    => 'superadmin@hotel.com',
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('admin123'),
         ]);
         $superAdmin->assignRole('super_admin');
 
@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
         $resepsionis = User::create([
             'name'     => 'Bejo Resepsionis',
             'email'    => 'resepsionis@hotel.com',
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('resepsionis123'),
         ]);
         $resepsionis->assignRole('resepsionis');
 

@@ -7,29 +7,30 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\FnbItem;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Room;
-use App\Models\RoomCategory;
+use App\Models\FnbCategory;
+use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PublicBookingController extends Controller
 {
     /**
-     * Halaman utama — tampilkan semua kamar yang tersedia
+     * Halaman utama — tampilkan semua kamar tersedia
      */
     public function index(Request $request)
     {
-        // Ambil semua kategori untuk filter
-        $categories = RoomCategory::withCount('rooms')->get();
+        $categories = \App\Models\RoomCategory::withCount('rooms')->get();
 
-        // Query kamar dengan filter
         $rooms = Room::with('category')
-                     ->where('status', 'available') // hanya kamar tersedia
-                     ->when($request->category, fn($q, $c) => $q->where('room_category_id', $c))
-                     ->when($request->min_price, fn($q, $p) => $q->where('price_per_night', '>=', $p))
-                     ->when($request->max_price, fn($q, $p) => $q->where('price_per_night', '<=', $p))
-                     ->when($request->capacity, fn($q, $c) => $q->where('capacity', '>=', $c))
-                     ->paginate(9);
+            ->where('status', 'available')
+            ->when($request->category, fn($q, $c) => $q->where('room_category_id', $c))
+            ->when($request->min_price, fn($q, $p) => $q->where('price_per_night', '>=', $p))
+            ->when($request->max_price, fn($q, $p) => $q->where('price_per_night', '<=', $p))
+            ->when($request->capacity, fn($q, $c) => $q->where('capacity', '>=', $c))
+            ->paginate(9);
 
         return view('public.booking.index', compact('rooms', 'categories'));
     }
@@ -39,65 +40,50 @@ class PublicBookingController extends Controller
      */
     public function show(Room $room, Request $request)
     {
-        // Kamar yang sedang maintenance atau occupied tidak bisa dipesan
         if ($room->status !== 'available') {
             return redirect()
-                   ->route('public.booking.index')
-                   ->with('error', 'Kamar ini sedang tidak tersedia.');
+                ->route('public.booking.index')
+                ->with('error', 'Kamar ini sedang tidak tersedia.');
         }
 
-        // Ambil menu FnB yang tersedia untuk ditambah ke booking
-        $fnbItems = FnbItem::with('category')
-                           ->where('is_available', true)
-                           ->get()
-                           ->groupBy('fnb_category_id'); // group by kategori
+        $fnbItems      = FnbItem::with('category')
+            ->where('is_available', true)
+            ->get()
+            ->groupBy('fnb_category_id');
 
-        $fnbCategories = \App\Models\FnbCategory::all()->keyBy('id');
+        $fnbCategories = FnbCategory::all()->keyBy('id');
 
         return view('public.booking.show', compact('room', 'fnbItems', 'fnbCategories'));
     }
 
     /**
-     * Proses form booking dari tamu
+     * Proses form booking dari tamu online
      */
     public function store(Request $request, Room $room)
     {
-        // Validasi semua input dari form
         $validated = $request->validate([
-            'guest_name'      => 'required|string|max:100',
-            'guest_email'     => 'required|email',
-            'guest_phone'     => 'required|string|max:20',
-            'guest_id_card'   => 'nullable|string|max:30',
-            'check_in'        => 'required|date|after_or_equal:today',
-            'check_out'       => 'required|date|after:check_in',
-            'num_guests'      => 'required|integer|min:1|max:' . $room->capacity,
-            'special_requests'=> 'nullable|string|max:500',
-            // FnB — optional, berupa array [fnb_item_id => quantity]
-            'fnb'             => 'nullable|array',
-            'fnb.*'           => 'integer|min:1',
+            'guest_name'       => 'required|string|max:100',
+            'guest_email'      => 'required|email',
+            'guest_phone'      => 'required|string|max:20',
+            'guest_id_card'    => 'nullable|string|max:30',
+            'check_in'         => 'required|date|after_or_equal:today',
+            'check_out'        => 'required|date|after:check_in',
+            'num_guests'       => 'required|integer|min:1|max:' . $room->capacity,
+            'special_requests' => 'nullable|string|max:500',
+            'fnb'              => 'nullable|array',
+            'fnb.*'            => 'integer|min:1',
         ]);
 
-        // Hitung jumlah malam
-        $nights = BookingHelper::calculateNights($validated['check_in'], $validated['check_out']);
-
-        if ($nights < 1) {
-            return back()->withErrors(['check_out' => 'Minimal menginap 1 malam.']);
-        }
-
-        // Hitung harga kamar
+        $nights    = BookingHelper::calculateNights($validated['check_in'], $validated['check_out']);
         $roomPrice = BookingHelper::calculateRoomPrice($room->price_per_night, $nights);
-
-        // Hitung harga FnB jika ada
-        $fnbPrice = 0;
+        $fnbPrice  = 0;
         $fnbOrders = [];
 
         if (!empty($validated['fnb'])) {
             foreach ($validated['fnb'] as $fnbItemId => $quantity) {
                 if ($quantity < 1) continue;
-
-                $fnbItem = FnbItem::find($fnbItemId);
+                $fnbItem    = FnbItem::find($fnbItemId);
                 if (!$fnbItem || !$fnbItem->is_available) continue;
-
                 $subtotal   = $fnbItem->price * $quantity;
                 $fnbPrice  += $subtotal;
                 $fnbOrders[] = [
@@ -111,14 +97,12 @@ class PublicBookingController extends Controller
 
         $totalPrice = $roomPrice + $fnbPrice;
 
-        // Gunakan DB transaction agar semua tersimpan atau semua gagal
-        // Kalau di tengah jalan error, semua rollback otomatis
-        DB::transaction(function () use ($validated, $room, $roomPrice, $fnbPrice, $totalPrice, $fnbOrders) {
+        // Gunakan DB transaction agar semua tersimpan atau semua rollback
+        $booking = DB::transaction(function () use ($validated, $room, $roomPrice, $fnbPrice, $totalPrice, $fnbOrders) {
 
-            // 1. Buat record booking
             $booking = Booking::create([
                 'booking_code'     => BookingHelper::generateBookingCode(),
-                'user_id'          => auth()->id(), // null jika tidak login
+                'user_id'          => auth()->id(),
                 'room_id'          => $room->id,
                 'guest_name'       => $validated['guest_name'],
                 'guest_email'      => $validated['guest_email'],
@@ -135,45 +119,116 @@ class PublicBookingController extends Controller
                 'total_price'      => $totalPrice,
             ]);
 
-            // 2. Simpan pesanan FnB jika ada
             foreach ($fnbOrders as $order) {
                 $booking->bookingItems()->create($order);
             }
 
-            // 3. Buat invoice otomatis
-            // Pajak 11% dari subtotal
-            $tax      = $totalPrice * 0.11;
-            $grandTotal = $totalPrice + $tax;
-
+            // Buat invoice — status unpaid sampai Midtrans konfirmasi
+            $tax = $totalPrice * 0.11;
             Invoice::create([
                 'invoice_number' => BookingHelper::generateInvoiceNumber(),
                 'booking_id'     => $booking->id,
                 'subtotal'       => $totalPrice,
                 'tax'            => $tax,
                 'discount'       => 0,
-                'total'          => $grandTotal,
+                'total'          => $totalPrice + $tax,
                 'status'         => 'unpaid',
-                'due_date'       => now()->addDays(1), // batas bayar 24 jam
+                'due_date'       => now()->addDays(1),
             ]);
 
-            // Simpan booking_code ke session untuk halaman konfirmasi
-            session(['last_booking_code' => $booking->booking_code]);
-            session(['last_booking_id'   => $booking->id]);
+            return $booking;
         });
 
-        return redirect()->route('public.booking.confirmation', [
-            'booking' => session('last_booking_id')
-        ]);
+        return redirect()->route('public.booking.confirmation', $booking->id);
     }
 
     /**
-     * Halaman konfirmasi setelah booking berhasil
+     * Halaman konfirmasi booking — tampilkan detail + tombol bayar Midtrans
      */
     public function confirmation(Booking $booking)
     {
-        // Load semua relasi yang dibutuhkan untuk tampilan
         $booking->load(['room', 'bookingItems.fnbItem', 'invoice']);
 
-        return view('public.booking.confirmation', compact('booking'));
+        $snapToken = null;
+        $snapError = null;
+
+        if ($booking->booking_type === 'online' && $booking->invoice?->status === 'unpaid') {
+            try {
+                $midtrans  = new MidtransService();
+                $snapToken = $midtrans->createSnapToken($booking);
+            } catch (\Exception $e) {
+                // Sementara simpan error untuk ditampilkan di view
+                $snapError = $e->getMessage();
+                Log::error('Midtrans snap token error: ' . $e->getMessage());
+            }
+        }
+
+        return view('public.booking.confirmation', compact('booking', 'snapToken', 'snapError'));
+    }
+
+    /**
+     * Callback dari Midtrans (webhook/notification)
+     * Dipanggil otomatis oleh server Midtrans setiap ada update status bayar
+     * Route ini tidak pakai CSRF (sudah dikecualikan di web.php)
+     */
+    public function paymentCallback(Request $request)
+    {
+        try {
+            $midtrans = new MidtransService();
+            $data     = $midtrans->handleNotification();
+
+            // Cari payment record berdasarkan order_id dari Midtrans
+            $payment  = Payment::where('order_id', $data['order_id'])->firstOrFail();
+            $booking  = $payment->booking;
+            $invoice  = $payment->invoice;
+
+            // Update payment record
+            $payment->update([
+                'status'            => $data['payment_status'],
+                'payment_type'      => $data['payment_type'],
+                'transaction_id'    => $data['transaction_id'],
+                'midtrans_response' => $request->all(),
+                'paid_at'           => $data['payment_status'] === 'success' ? now() : null,
+            ]);
+
+            // Jika pembayaran berhasil, update invoice dan booking
+            if ($data['payment_status'] === 'success') {
+                DB::transaction(function () use ($invoice, $booking) {
+                    // Tandai invoice lunas
+                    $invoice->update([
+                        'status'  => 'paid',
+                        'paid_at' => now(),
+                    ]);
+
+                    // Konfirmasi booking otomatis
+                    $booking->update(['status' => 'confirmed']);
+                });
+            }
+
+            // Jika gagal/expired, update status payment saja
+            // Booking tetap pending sampai tamu bayar ulang
+            if ($data['payment_status'] === 'failed') {
+                $payment->update(['status' => 'failed']);
+            }
+
+            // Return 200 ke Midtrans — penting! Jika tidak 200,
+            // Midtrans akan retry callback sampai 5 kali
+            return response()->json(['status' => 'ok'], 200);
+        } catch (\Exception $e) {
+            Log::error('Midtrans callback error: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Halaman setelah tamu selesai bayar di Midtrans
+     * Midtrans redirect tamu ke sini setelah proses payment
+     */
+    public function paymentFinish(Booking $booking)
+    {
+        // Reload data terbaru dari DB
+        $booking->load(['room', 'bookingItems.fnbItem', 'invoice']);
+
+        return view('public.booking.payment-finish', compact('booking'));
     }
 }
