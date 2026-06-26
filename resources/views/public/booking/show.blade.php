@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesan {{ $room->name }} — Paijo's Hotel</title>
+    <title>Pesan {{ $room->name ??"" }} — Paijo's Hotel</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -299,7 +299,7 @@
                      Setiap item punya x-data qty sendiri
                      Kirim event ke parent via $dispatch
                 ========================================== --}}
-                    @if ($fnbItems->count() > 0)
+                    @if ($booking_item->fnbItems->count() > 0)
                         <div class="bg-white rounded-2xl border border-gray-100 p-6">
                             <h2 class="font-bold text-gray-800 mb-1 flex items-center gap-2">
                                 <i class="ti ti-tools-kitchen-2" style="color:#16a34a;"></i>
@@ -309,7 +309,7 @@
                                 Opsional — bisa juga dipesan setelah check-in
                             </p>
 
-                            @foreach ($fnbItems as $categoryId => $items)
+                            @foreach ($booking_item->fnbItems as $categoryId => $items)
                                 @php $category = $fnbCategories[$categoryId] ?? null @endphp
                                 @if ($category)
                                     <div class="mb-6">

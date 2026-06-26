@@ -146,9 +146,12 @@ class BookingController extends Controller
     public function show(Booking $booking)
     {
         $booking->load(['room.category', 'bookingItems.fnbItem', 'invoice', 'createdBy']);
+        $room = Room::find($booking->room_id);
+        // return $booking;
+        return view('resepsionis.bookings.show', compact('booking', 'room'));
 
-        return view('resepsionis.bookings.show', compact('booking'));
     }
+    
 
     /**
      * Konfirmasi booking online (pending → confirmed)
