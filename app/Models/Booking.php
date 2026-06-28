@@ -72,4 +72,12 @@ class Booking extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    /**
+     * Relasi ke pesanan laundry
+     */
+    public function laundryOrders(): HasMany
+    {
+        return $this->hasMany(LaundryOrder::class);
+    }
 }

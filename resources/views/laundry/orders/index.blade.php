@@ -1,18 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Pesanan F&B Masuk')
+@section('title', 'Pesanan Laundry')
 
 @section('content')
 
-    {{-- Ganti bagian header dengan ini --}}
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-xl font-bold text-gray-800">Pesanan F&B Masuk</h2>
-            <p class="text-sm text-gray-400 mt-0.5">Kelola pesanan makanan & minuman dari tamu</p>
+            <h2 class="text-xl font-bold text-gray-800">Pesanan Laundry</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Kelola pesanan laundry dari tamu</p>
         </div>
-
-        {{-- Tombol buat pesanan baru --}}
-        <a href="{{ route('fnb.orders.create') }}"
+        <a href="{{ route('laundry.orders.create') }}"
             class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white
               rounded-xl transition hover:-translate-y-0.5"
             style="background-color:#16a34a;">
@@ -36,31 +33,31 @@
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-500">Sedang Diproses</span>
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-50">
-                    <i class="ti ti-tools-kitchen-2 text-blue-500"></i>
+                    <i class="ti ti-wash text-blue-500"></i>
                 </div>
             </div>
-            <p class="text-3xl font-bold text-gray-800">{{ $stats['preparing'] }}</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $stats['processing'] }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-5">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-gray-500">Terkirim Hari Ini</span>
+                <span class="text-xs font-semibold text-gray-500">Selesai Hari Ini</span>
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-green-50">
                     <i class="ti ti-check text-green-500"></i>
                 </div>
             </div>
-            <p class="text-3xl font-bold text-gray-800">{{ $stats['delivered'] }}</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $stats['done'] }}</p>
         </div>
     </div>
 
     {{-- Filter status --}}
     <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-5 flex items-center gap-2">
         @foreach ([
-            '' => 'Aktif (Pending & Preparing)',
+            '' => 'Aktif',
             'pending' => 'Pending',
-            'preparing' => 'Preparing',
-            'delivered' => 'Delivered',
+            'processing' => 'Processing',
+            'done' => 'Selesai',
         ] as $val => $label)
-            <a href="{{ route('fnb.orders.index', $val ? ['status' => $val] : []) }}"
+            <a href="{{ route('laundry.orders.index', $val ? ['status' => $val] : []) }}"
                 class="px-3 py-1.5 rounded-lg text-xs font-medium transition
                   {{ request('status', '') === $val ? 'text-white' : 'text-gray-500 hover:bg-gray-100' }}"
                 style="{{ request('status', '') === $val ? 'background-color:#16a34a;' : '' }}">
@@ -75,10 +72,11 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wide">
-                        <th class="text-left px-6 py-3">Menu</th>
-                        <th class="text-left px-6 py-3">Kamar / Tamu</th>
+                        <th class="text-left px-6 py-3">Item Laundry</th>
+                        <th class="text-left px-6 py-3">Tamu / Kamar</th>
                         <th class="text-left px-6 py-3">Qty</th>
                         <th class="text-left px-6 py-3">Subtotal</th>
+                        <th class="text-left px-6 py-3">Catatan</th>
                         <th class="text-left px-6 py-3">Status</th>
                         <th class="text-left px-6 py-3">Aksi</th>
                     </tr>
@@ -87,34 +85,29 @@
                     @forelse($orders as $order)
                         <tr class="hover:bg-gray-50 transition">
 
-                            {{-- Menu --}}
+                            {{-- Item laundry --}}
                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
-                                        @if ($order->fnbItem->image)
-                                            <img src="{{ Storage::url($order->fnbItem->image) }}"
-                                                class="w-full h-full object-contain" alt="{{ $order->fnbItem->name }}">
-                                        @else
-                                            <i class="ti ti-tools-kitchen-2 text-gray-300"></i>
-                                        @endif
-                                    </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">{{ $order->laundryItem->icon ?? '👕' }}</span>
                                     <div>
-                                        <p class="font-semibold text-gray-800">{{ $order->fnbItem->name }}</p>
+                                        <p class="font-semibold text-gray-800">
+                                            {{ $order->laundryItem->name ?? '-' }}
+                                        </p>
                                         <p class="text-xs text-gray-400">
-                                            {{ $order->fnbItem->category->icon ?? '' }}
-                                            {{ $order->fnbItem->category->name ?? '-' }}
+                                            per {{ $order->laundryItem->unit ?? 'pcs' }}
                                         </p>
                                     </div>
                                 </div>
                             </td>
 
-                            {{-- Kamar / Tamu --}}
+                            {{-- Tamu --}}
                             <td class="px-6 py-4">
                                 <p class="font-medium text-gray-700">
+                                    {{ $order->booking->guest_name ?? '-' }}
+                                </p>
+                                <p class="text-xs text-gray-400">
                                     Kamar {{ $order->booking->room->room_number ?? '-' }}
                                 </p>
-                                <p class="text-xs text-gray-400">{{ $order->booking->guest_name }}</p>
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-gray-800">
@@ -125,13 +118,17 @@
                                 Rp {{ number_format($order->subtotal, 0, ',', '.') }}
                             </td>
 
+                            <td class="px-6 py-4 text-xs text-gray-400">
+                                {{ $order->notes ?? '-' }}
+                            </td>
+
                             {{-- Badge status --}}
                             <td class="px-6 py-4">
                                 @php
                                     $statusConfig = [
                                         'pending' => 'bg-yellow-100 text-yellow-700',
-                                        'preparing' => 'bg-blue-100 text-blue-700',
-                                        'delivered' => 'bg-green-100 text-green-700',
+                                        'processing' => 'bg-blue-100 text-blue-700',
+                                        'done' => 'bg-green-100 text-green-700',
                                     ];
                                 @endphp
                                 <span
@@ -141,28 +138,28 @@
                                 </span>
                             </td>
 
-                            {{-- Tombol ubah status --}}
+                            {{-- Tombol update status --}}
                             <td class="px-6 py-4">
                                 @if ($order->status === 'pending')
-                                    {{-- Pending → Preparing --}}
-                                    <form action="{{ route('fnb.orders.update-status', $order) }}" method="POST">
+                                    <form action="{{ route('laundry.orders.update-status', $order) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
-                                        <input type="hidden" name="status" value="preparing">
+                                        <input type="hidden" name="status" value="processing">
                                         <button type="submit"
-                                            class="px-3 py-1.5 text-xs font-semibold text-white rounded-lg transition"
+                                            class="px-3 py-1.5 text-xs font-semibold text-white
+                                               rounded-lg transition"
                                             style="background:#3b82f6;">
-                                            <i class="ti ti-chef-hat mr-1"></i> Proses
+                                            <i class="ti ti-wash mr-1"></i> Proses
                                         </button>
                                     </form>
-                                @elseif($order->status === 'preparing')
-                                    {{-- Preparing → Delivered --}}
-                                    <form action="{{ route('fnb.orders.update-status', $order) }}" method="POST">
+                                @elseif($order->status === 'processing')
+                                    <form action="{{ route('laundry.orders.update-status', $order) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
-                                        <input type="hidden" name="status" value="delivered">
+                                        <input type="hidden" name="status" value="done">
                                         <button type="submit"
-                                            class="px-3 py-1.5 text-xs font-semibold text-white rounded-lg transition"
+                                            class="px-3 py-1.5 text-xs font-semibold text-white
+                                               rounded-lg transition"
                                             style="background:#16a34a;">
                                             <i class="ti ti-check mr-1"></i> Selesai
                                         </button>
@@ -174,9 +171,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-16 text-center">
-                                <i class="ti ti-clipboard-off text-5xl text-gray-200 block mb-3"></i>
-                                <p class="text-gray-400">Tidak ada pesanan masuk</p>
+                            <td colspan="7" class="px-6 py-16 text-center">
+                                <span class="text-5xl block mb-3">👕</span>
+                                <p class="text-gray-400">Tidak ada pesanan laundry</p>
                             </td>
                         </tr>
                     @endforelse

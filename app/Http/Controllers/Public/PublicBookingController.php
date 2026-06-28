@@ -221,14 +221,137 @@ class PublicBookingController extends Controller
     }
 
     /**
-     * Halaman setelah tamu selesai bayar di Midtrans
-     * Midtrans redirect tamu ke sini setelah proses payment
+     * Halaman setelah tamu selesai bayar
+     * Sengaja tidak pakai Route Model Binding (Booking $booking)
+     * karena Laravel akan cache model dari request sebelumnya
+     * Kita ambil manual dari DB agar selalu fresh
      */
-    public function paymentFinish(Booking $booking)
+    public function paymentFinish($bookingId)
     {
-        // Reload data terbaru dari DB
-        $booking->load(['room', 'bookingItems.fnbItem', 'invoice']);
+        // Ambil langsung dari DB tanpa cache apapun
+        $booking = Booking::with(['room', 'bookingItems.fnbItem', 'invoice'])
+            ->findOrFail($bookingId);
+
+        $payment = $booking->payments()->latest()->first();
+
+        // Cek ke Midtrans hanya jika invoice belum paid
+        if ($payment && $payment->order_id && $booking->invoice?->status !== 'paid') {
+            try {
+                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                \Midtrans\Config::$curlOptions  = [
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                ];
+
+                $status            = @\Midtrans\Transaction::status($payment->order_id);
+                $transactionStatus = $status->transaction_status ?? null;
+                $fraudStatus       = $status->fraud_status ?? null;
+
+                $isSuccess = ($transactionStatus === 'settlement') ||
+                    ($transactionStatus === 'capture' && $fraudStatus !== 'challenge');
+
+                if ($isSuccess) {
+                    DB::transaction(function () use ($booking, $payment, $status) {
+                        $payment->update([
+                            'status'       => 'success',
+                            'payment_type' => $status->payment_type ?? null,
+                            'paid_at'      => now(),
+                        ]);
+
+                        $booking->invoice()->update([
+                            'status'  => 'paid',
+                            'paid_at' => now(),
+                        ]);
+
+                        if ($booking->status === 'pending') {
+                            $booking->update(['status' => 'confirmed']);
+                        }
+                    });
+                }
+            } catch (\Exception $e) {
+                Log::error('Payment finish error: ' . $e->getMessage());
+            }
+        }
+
+        // Ambil ULANG dari DB setelah semua proses update selesai
+        // Ini yang paling penting — refresh total dari DB
+        $booking = Booking::with(['room', 'bookingItems.fnbItem', 'invoice'])
+            ->findOrFail($bookingId);
 
         return view('public.booking.payment-finish', compact('booking'));
+    }
+
+    public function checkPayment($bookingId)
+    {
+        // Ambil fresh dari DB
+        $booking = Booking::with('invoice')->findOrFail($bookingId);
+        $payment = $booking->payments()->latest()->first();
+
+        if (!$payment || !$payment->order_id) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Payment tidak ditemukan'
+            ]);
+        }
+
+        // Kalau sudah paid di DB, langsung return success
+        if ($booking->invoice?->status === 'paid') {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Pembayaran sudah terkonfirmasi!'
+            ]);
+        }
+
+        try {
+            \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production');
+            \Midtrans\Config::$curlOptions  = [
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ];
+
+            $status            = @\Midtrans\Transaction::status($payment->order_id);
+            $transactionStatus = $status->transaction_status ?? null;
+            $fraudStatus       = $status->fraud_status ?? null;
+
+            $isSuccess = ($transactionStatus === 'settlement') ||
+                ($transactionStatus === 'capture' && $fraudStatus !== 'challenge');
+
+            if ($isSuccess) {
+                DB::transaction(function () use ($booking, $payment, $status) {
+                    $payment->update([
+                        'status'       => 'success',
+                        'payment_type' => $status->payment_type ?? null,
+                        'paid_at'      => now(),
+                    ]);
+
+                    $booking->invoice()->update([
+                        'status'  => 'paid',
+                        'paid_at' => now(),
+                    ]);
+
+                    if ($booking->status === 'pending') {
+                        $booking->update(['status' => 'confirmed']);
+                    }
+                });
+
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Pembayaran berhasil dikonfirmasi!'
+                ]);
+            }
+
+            return response()->json([
+                'status'  => 'pending',
+                'message' => 'Belum terkonfirmasi. Status Midtrans: ' . $transactionStatus
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Check payment error: ' . $e->getMessage());
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 }

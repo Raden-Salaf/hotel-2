@@ -9,14 +9,13 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Load Snap.js dari Midtrans — berbeda URL untuk sandbox vs production --}}
-    <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}">
-    </script>
+    <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
 </head>
 
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
     {{-- DEBUG SEMENTARA — hapus setelah Midtrans berfungsi --}}
-    @if(isset($snapError) && $snapError)
+    @if (isset($snapError) && $snapError)
         <div style="background:red; color:white; padding:16px; margin:16px; border-radius:8px;">
             <strong>Midtrans Error:</strong> {{ $snapError }}
         </div>
@@ -104,10 +103,10 @@
                 </div>
 
                 {{-- Pesanan FnB --}}
-                @if($booking->bookingItems->count() > 0)
+                @if ($booking->bookingItems->count() > 0)
                     <div class="border-t border-gray-100 pt-4">
                         <p class="text-xs font-semibold text-gray-500 mb-2">Pesanan F&B</p>
-                        @foreach($booking->bookingItems as $item)
+                        @foreach ($booking->bookingItems as $item)
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="text-gray-600">
                                     {{ $item->fnbItem->name }} ×{{ $item->quantity }}
@@ -121,7 +120,7 @@
                 @endif
 
                 {{-- Rincian biaya --}}
-                @if($booking->invoice)
+                @if ($booking->invoice)
                     <div class="border-t border-gray-100 pt-4 space-y-2 text-sm">
                         <div class="flex justify-between text-gray-500">
                             <span>Subtotal</span>
@@ -141,13 +140,15 @@
                         {{-- Status pembayaran --}}
                         <div class="flex items-center justify-between pt-1">
                             <span class="text-xs text-gray-400">Status</span>
-                            @if($booking->invoice->status === 'paid')
-                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+                            @if ($booking->invoice->status === 'paid')
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-xs font-semibold
                                                                              bg-green-100 text-green-700">
                                     ✓ Lunas
                                 </span>
                             @else
-                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-xs font-semibold
                                                                              bg-yellow-100 text-yellow-700">
                                     Menunggu Pembayaran
                                 </span>
@@ -155,7 +156,7 @@
                         </div>
 
                         {{-- Batas waktu bayar --}}
-                        @if($booking->invoice->status === 'unpaid')
+                        @if ($booking->invoice->status === 'unpaid')
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">Batas Bayar</span>
                                 <span class="text-xs font-medium text-red-500">
@@ -171,10 +172,12 @@
             {{-- Tombol aksi --}}
             <div class="px-6 pb-6 space-y-3">
 
-                @if($booking->invoice?->status === 'unpaid' && $snapToken)
+                @if ($booking->invoice?->status === 'unpaid' && $snapToken)
                     {{-- Tombol bayar via Midtrans Snap --}}
-                    <button id="pay-button" class="w-full py-3.5 text-sm font-bold text-white rounded-xl transition
-                                                   hover:-translate-y-0.5" style="background:#16a34a;
+                    <button id="pay-button"
+                        class="w-full py-3.5 text-sm font-bold text-white rounded-xl transition
+                                                   hover:-translate-y-0.5"
+                        style="background:#16a34a;
                                                    box-shadow: 0 4px 15px rgba(22,163,74,0.3);">
                         <i class="ti ti-credit-card mr-2"></i>
                         Bayar Sekarang —
@@ -184,13 +187,12 @@
                     {{-- Info metode pembayaran yang tersedia --}}
                     <div class="flex items-center justify-center gap-3 flex-wrap">
                         <span class="text-xs text-gray-400">Bayar via:</span>
-                        @foreach(['GoPay', 'OVO', 'Transfer Bank', 'Kartu Kredit', 'QRIS'] as $method)
+                        @foreach (['GoPay', 'OVO', 'Transfer Bank', 'Kartu Kredit', 'QRIS'] as $method)
                             <span class="text-xs px-2 py-1 bg-gray-100 rounded-lg text-gray-500">
                                 {{ $method }}
                             </span>
                         @endforeach
                     </div>
-
                 @elseif($booking->invoice?->status === 'paid')
                     {{-- Sudah lunas --}}
                     <div class="w-full py-3.5 text-center text-sm font-bold rounded-xl"
@@ -206,7 +208,8 @@
                     </div>
                 @endif
 
-                <a href="{{ route('public.booking.index') }}" class="block w-full py-3 text-sm font-medium text-center text-gray-500
+                <a href="{{ route('public.booking.index') }}"
+                    class="block w-full py-3 text-sm font-medium text-center text-gray-500
                       bg-gray-100 rounded-xl hover:bg-gray-200 transition">
                     Kembali ke Beranda
                 </a>
@@ -219,41 +222,101 @@
     SCRIPT MIDTRANS SNAP
     snap.pay() membuka popup pembayaran Midtrans
     ============================================ --}}
-    @if($snapToken)
+    @if ($snapToken)
         <script>
-            document.getElementById('pay-button').addEventListener('click', function () {
+            let isSnapOpen = false
 
-                // snap.pay() adalah fungsi dari Snap.js yang sudah di-load di head
-                // Parameter pertama: snap token yang kita buat di backend
-                // Parameter kedua: callback object untuk berbagai kondisi
-                snap.pay('{{ $snapToken }}', {
+            function initPayButton() {
+                const btn = document.getElementById('pay-button')
+                if (!btn) return
 
-                    // onSuccess: dipanggil saat pembayaran berhasil
-                    onSuccess: function (result) {
-                        // Redirect ke halaman finish
-                        window.location.href = '{{ route('public.payment.finish', $booking->id) }}'
-                    },
-
-                    // onPending: dipanggil saat pembayaran pending
-                    // (contoh: transfer bank yang belum dikonfirmasi)
-                    onPending: function (result) {
-                        alert('Pembayaran Anda sedang diproses. Kami akan konfirmasi segera.')
-                        window.location.href = '{{ route('public.payment.finish', $booking->id) }}'
-                    },
-
-                    // onError: dipanggil saat terjadi error
-                    onError: function (result) {
-                        alert('Pembayaran gagal. Silakan coba lagi.')
-                        console.error('Midtrans error:', result)
-                    },
-
-                    // onClose: dipanggil saat tamu tutup popup tanpa bayar
-                    onClose: function () {
-                        // Tidak perlu redirect, biarkan tamu di halaman konfirmasi
-                        console.log('Popup ditutup tanpa pembayaran')
+                btn.addEventListener('click', function() {
+                    if (typeof snap === 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sistem belum siap',
+                            text: 'Mohon tunggu sebentar lalu coba lagi.',
+                        })
+                        return
                     }
+
+                    if (isSnapOpen) return
+                    isSnapOpen = true
+
+                    this.disabled = true
+                    this.innerHTML = '<i class="ti ti-loader mr-2"></i> Membuka pembayaran...'
+
+                    const btn = this
+
+                    snap.pay('{{ $snapToken }}', {
+
+                        // Pembayaran berhasil — langsung redirect ke finish
+                        onSuccess: function(result) {
+                            isSnapOpen = false
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Pembayaran Berhasil!',
+                                text: 'Memverifikasi pembayaran...',
+                                timer: 1500,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                            }).then(() => {
+                                // Paksa navigasi ke URL baru — tidak pakai history/cache
+                                window.location.replace(
+                                    '{{ route('public.payment.finish', $booking->id) }}')
+                            })
+                        },
+
+                        onPending: function(result) {
+                            isSnapOpen = false
+                            window.location.replace('{{ route('public.payment.finish', $booking->id) }}')
+                        },
+
+                        // Pembayaran pending (transfer bank dll)
+                        onPending: function(result) {
+                            isSnapOpen = false
+
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Menunggu Pembayaran',
+                                text: 'Selesaikan pembayaran Anda sesuai instruksi.',
+                                timer: 2500,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                            }).then(() => {
+                                window.location.href =
+                                    '{{ route('public.payment.finish', $booking->id) }}'
+                            })
+                        },
+
+                        // Pembayaran gagal
+                        onError: function(result) {
+                            isSnapOpen = false
+                            btn.disabled = false
+                            btn.innerHTML =
+                                '<i class="ti ti-credit-card mr-2"></i> Bayar Sekarang — Rp {{ number_format($booking->invoice->total, 0, ',', '.') }}'
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Pembayaran Gagal',
+                                text: 'Silakan coba metode pembayaran lain.',
+                            })
+                        },
+
+                        // Popup ditutup tanpa bayar
+                        onClose: function() {
+                            isSnapOpen = false
+                            btn.disabled = false
+                            btn.innerHTML =
+                                '<i class="ti ti-credit-card mr-2"></i> Bayar Sekarang — Rp {{ number_format($booking->invoice->total, 0, ',', '.') }}'
+                        }
+                    })
                 })
-            })
+            }
+
+            // Tunggu semua script selesai load
+            window.addEventListener('load', initPayButton)
         </script>
     @endif
 

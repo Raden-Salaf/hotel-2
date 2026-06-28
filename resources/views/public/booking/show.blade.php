@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesan {{ $room->name ??"" }} — Paijo's Hotel</title>
+    <title>Pesan {{ $room->name }} — Paijo's Hotel</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -22,7 +22,7 @@
                 <i class="ti ti-arrow-left"></i>
             </a>
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: #16a34a;">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#16a34a;">
                     <i class="ti ti-building text-white text-lg"></i>
                 </div>
                 <span class="font-bold text-gray-800">Paijo's Hotel</span>
@@ -39,9 +39,6 @@
         checkIn: '{{ now()->format('Y-m-d') }}',
         checkOut: '{{ now()->addDay()->format('Y-m-d') }}',
         pricePerNight: {{ $room->price_per_night }},
-    
-        {{-- Object menyimpan semua FnB yang dipilih --}}
-        {{-- format: { id: { price, name, qty } } --}}
         fnbItems: {},
     
         get nights() {
@@ -72,7 +69,6 @@
             return 'Rp ' + Math.round(num).toLocaleString('id-ID')
         },
     
-        {{-- Dipanggil saat menerima event fnb-update dari child --}}
         setFnb(id, price, name, qty) {
             if (qty <= 0) {
                 delete this.fnbItems[id]
@@ -84,7 +80,7 @@
                 }
             }
         }
-    }" {{-- Tangkap event dari semua child item --}}
+    }"
         @fnb-update.window="setFnb(
          $event.detail.id,
          $event.detail.price,
@@ -135,13 +131,18 @@
                             <p class="text-xs text-gray-400">per malam</p>
                         </div>
                     </div>
+
                     <p class="text-gray-600 text-sm leading-relaxed mb-4">
                         {{ $room->description }}
                     </p>
+
+                    {{-- Fasilitas --}}
                     @if ($room->facilities)
                         <div class="flex flex-wrap gap-2">
                             @foreach ($room->facilities as $f)
-                                <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-gray-600"
+                                <span
+                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl
+                                         text-xs text-gray-600"
                                     style="background:#f0fdf4;">
                                     <i class="ti ti-check text-green-500 text-xs"></i>
                                     {{ $f }}
@@ -151,7 +152,9 @@
                     @endif
                 </div>
 
-                {{-- Form booking --}}
+                {{-- ==========================================
+                 FORM BOOKING
+            ========================================== --}}
                 <form action="{{ route('public.booking.store', $room) }}" method="POST" id="booking-form">
                     @csrf
 
@@ -161,6 +164,7 @@
                             <i class="ti ti-calendar-check" style="color:#16a34a;"></i>
                             Tanggal Menginap
                         </h2>
+
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -218,9 +222,9 @@
                                     </label>
                                     <input type="text" name="guest_name" value="{{ old('guest_name') }}"
                                         placeholder="Nama sesuai KTP" required
-                                        class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                              bg-gray-50 focus:outline-none focus:border-green-500
-                                              focus:ring-2 focus:ring-green-100
+                                        class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                              rounded-xl bg-gray-50 focus:outline-none
+                                              focus:border-green-500 focus:ring-2 focus:ring-green-100
                                               @error('guest_name') border-red-400 @enderror">
                                     @error('guest_name')
                                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -232,11 +236,12 @@
                                     </label>
                                     <input type="text" name="guest_id_card" value="{{ old('guest_id_card') }}"
                                         placeholder="Opsional"
-                                        class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                              bg-gray-50 focus:outline-none focus:border-green-500
-                                              focus:ring-2 focus:ring-green-100">
+                                        class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                              rounded-xl bg-gray-50 focus:outline-none
+                                              focus:border-green-500 focus:ring-2 focus:ring-green-100">
                                 </div>
                             </div>
+
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -244,9 +249,9 @@
                                     </label>
                                     <input type="email" name="guest_email" value="{{ old('guest_email') }}"
                                         placeholder="email@contoh.com" required
-                                        class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                              bg-gray-50 focus:outline-none focus:border-green-500
-                                              focus:ring-2 focus:ring-green-100
+                                        class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                              rounded-xl bg-gray-50 focus:outline-none
+                                              focus:border-green-500 focus:ring-2 focus:ring-green-100
                                               @error('guest_email') border-red-400 @enderror">
                                     @error('guest_email')
                                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -258,48 +263,51 @@
                                     </label>
                                     <input type="text" name="guest_phone" value="{{ old('guest_phone') }}"
                                         placeholder="08xxxxxxxxxx" required
-                                        class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                              bg-gray-50 focus:outline-none focus:border-green-500
-                                              focus:ring-2 focus:ring-green-100
+                                        class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                              rounded-xl bg-gray-50 focus:outline-none
+                                              focus:border-green-500 focus:ring-2 focus:ring-green-100
                                               @error('guest_phone') border-red-400 @enderror">
                                     @error('guest_phone')
                                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                     @enderror
                                 </div>
                             </div>
+
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-600 mb-1.5">
                                         Jumlah Tamu <span class="text-red-400">*</span>
                                     </label>
                                     <select name="num_guests"
-                                        class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                               bg-gray-50 focus:outline-none focus:border-green-500
-                                               focus:ring-2 focus:ring-green-100">
+                                        class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                               rounded-xl bg-gray-50 focus:outline-none
+                                               focus:border-green-500 focus:ring-2 focus:ring-green-100">
                                         @for ($i = 1; $i <= $room->capacity; $i++)
                                             <option value="{{ $i }}">{{ $i }} Tamu</option>
                                         @endfor
                                     </select>
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1.5">
                                     Permintaan Khusus
                                 </label>
                                 <textarea name="special_requests" rows="3" placeholder="Contoh: extra bed, lantai tinggi, dll..."
-                                    class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl
-                                             bg-gray-50 focus:outline-none focus:border-green-500
-                                             focus:ring-2 focus:ring-green-100 resize-none">{{ old('special_requests') }}</textarea>
+                                    class="w-full px-3 py-2.5 text-sm border border-gray-200
+                                             rounded-xl bg-gray-50 focus:outline-none
+                                             focus:border-green-500 focus:ring-2 focus:ring-green-100
+                                             resize-none">{{ old('special_requests') }}</textarea>
                             </div>
                         </div>
                     </div>
 
                     {{-- ==========================================
                      PILIH MENU FNB
-                     Setiap item punya x-data qty sendiri
-                     Kirim event ke parent via $dispatch
+                     Setiap item FnB punya x-data qty sendiri
+                     Komunikasi ke parent via $dispatch event
                 ========================================== --}}
-                    @if ($booking_item->fnbItems->count() > 0)
+                    @if ($fnbItems->count() > 0)
                         <div class="bg-white rounded-2xl border border-gray-100 p-6">
                             <h2 class="font-bold text-gray-800 mb-1 flex items-center gap-2">
                                 <i class="ti ti-tools-kitchen-2" style="color:#16a34a;"></i>
@@ -309,25 +317,22 @@
                                 Opsional — bisa juga dipesan setelah check-in
                             </p>
 
-                            @foreach ($booking_item->fnbItems as $categoryId => $items)
+                            @foreach ($fnbItems as $categoryId => $items)
                                 @php $category = $fnbCategories[$categoryId] ?? null @endphp
                                 @if ($category)
                                     <div class="mb-6">
                                         {{-- Header kategori --}}
                                         <div class="flex items-center gap-2 mb-3">
                                             <span class="text-lg">{{ $category->icon }}</span>
-                                            <h3 class="text-sm font-bold text-gray-700">{{ $category->name }}</h3>
+                                            <h3 class="text-sm font-bold text-gray-700">
+                                                {{ $category->name }}
+                                            </h3>
                                             <div class="flex-1 h-px bg-gray-100"></div>
                                         </div>
 
                                         <div class="space-y-2">
                                             @foreach ($items as $fnbItem)
-                                                {{-- ==========================================
-                                     ITEM FNB
-                                     x-data lokal hanya untuk qty item ini
-                                     Saat qty berubah → dispatch ke window
-                                     Parent tangkap via @fnb-update.window
-                                ========================================== --}}
+                                                {{-- Item FnB dengan x-data qty lokal --}}
                                                 <div class="flex items-center gap-3 p-3 rounded-xl border transition"
                                                     x-data="{ qty: 0 }"
                                                     :class="qty > 0 ?
@@ -362,14 +367,10 @@
                                                         </p>
                                                     </div>
 
-                                                    {{-- ==========================================
-                                         QTY CONTROL
-                                         Tombol + dan - update qty lokal
-                                         lalu dispatch event ke parent
-                                    ========================================== --}}
+                                                    {{-- QTY CONTROL --}}
                                                     <div class="flex items-center gap-3 flex-shrink-0">
 
-                                                        {{-- Tombol kurangi qty --}}
+                                                        {{-- Tombol kurangi --}}
                                                         <button type="button"
                                                             @click="
                                                     if (qty > 0) {
@@ -382,18 +383,15 @@
                                                         })
                                                     }
                                                 "
-                                                            class="w-8 h-8 flex items-center justify-center rounded-full
-                                                       border-2 transition"
+                                                            class="w-8 h-8 flex items-center justify-center
+                                                       rounded-full border-2 transition"
                                                             :class="qty > 0 ?
                                                                 'border-red-300 text-red-500 hover:bg-red-50' :
                                                                 'border-gray-200 text-gray-300 cursor-not-allowed'">
                                                             <i class="ti ti-minus text-xs"></i>
                                                         </button>
 
-                                                        {{-- DISPLAY QTY —
-                                             pakai style inline untuk pastikan warna selalu tampil
-                                             karena Tailwind JIT kadang tidak compile class conditional
-                                        --}}
+                                                        {{-- Display qty -- pakai style inline agar selalu kelihatan --}}
                                                         <div class="w-8 h-8 flex items-center justify-center rounded-full"
                                                             :style="qty > 0 ?
                                                                 'background:#16a34a;' :
@@ -404,13 +402,12 @@
                                                             </span>
                                                         </div>
 
-                                                        {{-- Hidden input — nama kosong jika qty 0 --}}
-                                                        {{-- Saat submit form, hanya terkirim jika qty > 0 --}}
+                                                        {{-- Hidden input — hanya kirim jika qty > 0 --}}
                                                         <input type="hidden"
                                                             :name="qty > 0 ? 'fnb[{{ $fnbItem->id }}]' : ''"
                                                             :value="qty">
 
-                                                        {{-- Tombol tambah qty --}}
+                                                        {{-- Tombol tambah --}}
                                                         <button type="button"
                                                             @click="
                                                     qty++
@@ -421,9 +418,9 @@
                                                         qty:   qty
                                                     })
                                                 "
-                                                            class="w-8 h-8 flex items-center justify-center rounded-full
-                                                       border-2 border-green-300 text-green-600
-                                                       hover:bg-green-50 transition">
+                                                            class="w-8 h-8 flex items-center justify-center
+                                                       rounded-full border-2 border-green-300
+                                                       text-green-600 hover:bg-green-50 transition">
                                                             <i class="ti ti-plus text-xs"></i>
                                                         </button>
                                                     </div>
@@ -438,6 +435,7 @@
 
                 </form>
             </div>
+            {{-- END KOLOM KIRI --}}
 
             {{-- ==========================================
              KOLOM KANAN — Ringkasan Harga (Sticky)
@@ -456,7 +454,7 @@
                     {{-- Rincian harga --}}
                     <div class="space-y-2 mb-4">
 
-                        {{-- Harga kamar --}}
+                        {{-- Harga kamar × malam --}}
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-gray-500">
                                 Rp {{ number_format($room->price_per_night, 0, ',', '.') }}
@@ -466,7 +464,7 @@
                             </span>
                         </div>
 
-                        {{-- Item FnB yang dipilih — update real-time --}}
+                        {{-- Item FnB yang dipilih --}}
                         <template x-for="(item, id) in fnbItems" :key="id">
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-gray-500 truncate max-w-32" x-text="item.name + ' ×' + item.qty">
@@ -477,7 +475,7 @@
                             </div>
                         </template>
 
-                        {{-- Subtotal + pajak --}}
+                        {{-- Subtotal + Pajak --}}
                         <div class="border-t border-gray-100 pt-2 space-y-1">
                             <div class="flex items-center justify-between text-xs text-gray-400">
                                 <span>Subtotal</span>
@@ -514,12 +512,15 @@
                         Pilih tanggal check-in & check-out dulu
                     </p>
 
-                    <p class="text-xs text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
+                    <p
+                        class="text-xs text-gray-400 text-center mt-3
+                           flex items-center justify-center gap-1">
                         <i class="ti ti-lock text-xs"></i>
                         Pembayaran aman via Midtrans
                     </p>
                 </div>
             </div>
+            {{-- END KOLOM KANAN --}}
 
         </div>
     </div>
