@@ -1,35 +1,47 @@
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+<header class="flex items-center justify-between px-4 py-3 flex-shrink-0
+               bg-white border-b border-gray-100">
 
-    {{-- Tombol toggle sidebar --}}
-    <button @click="sidebarOpen = !sidebarOpen"
-            class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-    </button>
+    {{-- Kiri: Toggle sidebar + judul --}}
+    <div class="flex items-center gap-3 min-w-0">
+        <button @click="sidebarOpen = !sidebarOpen" class="w-9 h-9 flex items-center justify-center rounded-xl
+                       text-gray-400 hover:bg-gray-100 hover:text-gray-600
+                       transition flex-shrink-0">
+            <i class="ti ti-menu-2 text-lg"></i>
+        </button>
 
-    {{-- Page Title --}}
-    <div class="flex-1 ml-4">
-        <h1 class="text-lg font-semibold text-gray-800">@yield('title', 'Dashboard')</h1>
+        <div class="min-w-0">
+            <h1 class="text-sm md:text-base font-semibold text-gray-800 truncate">
+                @yield('title', 'Dashboard')
+            </h1>
+            <p class="text-xs text-gray-400 hidden sm:block">
+                {{ now()->translatedFormat('l, d F Y') }}
+            </p>
+        </div>
     </div>
 
-    {{-- Kanan: Notifikasi + Logout --}}
-    <div class="flex items-center gap-3">
+    {{-- Kanan --}}
+    <div class="flex items-center gap-2 flex-shrink-0">
 
-        {{-- Tanggal hari ini --}}
-        <span class="text-sm text-gray-500 hidden md:block">
+        {{-- Tanggal — hanya desktop --}}
+        <span class="text-xs text-gray-400 hidden lg:block">
             {{ now()->translatedFormat('l, d F Y') }}
         </span>
+
+        {{-- Notifikasi --}}
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl
+                       text-gray-400 hover:bg-gray-100 hover:text-gray-600
+                       transition relative">
+            <i class="ti ti-bell text-lg"></i>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full"></span>
+        </button>
 
         {{-- Logout --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit"
-                    class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Logout
+            <button type="submit" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-500
+                           hover:bg-gray-100 hover:text-gray-700 rounded-xl transition">
+                <i class="ti ti-logout text-base"></i>
+                <span class="hidden sm:inline">Logout</span>
             </button>
         </form>
     </div>

@@ -63,8 +63,8 @@ class BookingController extends Controller
             'guest_email'      => 'required|email',
             'guest_phone'      => 'required|string|max:20',
             'guest_id_card'    => 'nullable|string|max:30',
-            'check_in'         => 'required|date',
-            'check_out'        => 'required|date|after:check_in',
+            'check_in'         => 'required|date|after_or_equal:today', // ← pastikan ada
+            'check_out'        => 'required|date|after:check_in',       // ← pastikan ada
             'num_guests'       => 'required|integer|min:1',
             'special_requests' => 'nullable|string',
             'fnb'              => 'nullable|array',
@@ -149,9 +149,8 @@ class BookingController extends Controller
         $room = Room::find($booking->room_id);
         // return $booking;
         return view('resepsionis.bookings.show', compact('booking', 'room'));
-
     }
-    
+
 
     /**
      * Konfirmasi booking online (pending → confirmed)
