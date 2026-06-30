@@ -140,17 +140,18 @@ class BookingController extends Controller
             ->with('success', 'Booking walk-in berhasil dibuat & invoice otomatis lunas!');
     }
 
-    /**
-     * Detail booking
-     */
     public function show(Booking $booking)
     {
-        $booking->load(['room.category', 'bookingItems.fnbItem', 'invoice', 'createdBy']);
-        $room = Room::find($booking->room_id);
-        // return $booking;
-        return view('resepsionis.bookings.show', compact('booking', 'room'));
-    }
+        $booking->load([
+            'room.category',
+            'bookingItems.fnbItem.category',
+            'laundryOrders.laundryItem',
+            'invoice',
+            'createdBy',
+        ]);
 
+        return view('resepsionis.bookings.show', compact('booking'));
+    }
 
     /**
      * Konfirmasi booking online (pending → confirmed)
@@ -258,7 +259,12 @@ class BookingController extends Controller
      */
     public function invoice(Booking $booking)
     {
-        $booking->load(['room', 'bookingItems.fnbItem.category', 'invoice']);
+        $booking->load([
+            'room',
+            'bookingItems.fnbItem.category',
+            'laundryOrders.laundryItem',
+            'invoice',
+        ]);
 
         return view('resepsionis.bookings.invoice', compact('booking'));
     }
