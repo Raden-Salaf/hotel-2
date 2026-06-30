@@ -1,58 +1,180 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏨 Paijo's Hotel — Hotel Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem manajemen hotel berbasis web yang dibangun menggunakan **Laravel 13**. Aplikasi ini mencakup pengelolaan kamar, booking (online & walk-in), pemesanan makanan/minuman (F&B), layanan laundry, hingga integrasi pembayaran online melalui **Midtrans**.
 
-## About Laravel
+Project ini dibuat sebagai sarana pembelajaran Laravel secara hands-on, mulai dari setup database, autentikasi & role, CRUD, hingga integrasi payment gateway dan deployment.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 👥 Multi Role
+- **Super Admin** — akses penuh ke seluruh fitur sistem
+- **Resepsionis** — kelola booking, check-in/check-out tamu, invoice
+- **Admin F&B** — kelola menu makanan/minuman & pesanan masuk
 
-## Learning Laravel
+### 🛏️ Manajemen Kamar
+- CRUD kamar lengkap dengan kategori, fasilitas, dan foto
+- Status kamar otomatis (tersedia, terisi, maintenance)
+- Upload gambar dengan crop otomatis
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 📅 Sistem Booking
+- **Booking Online** — tamu dapat memesan kamar sendiri melalui landing page publik
+- **Booking Walk-in** — resepsionis input langsung untuk tamu yang datang ke lokasi
+- Alur status booking: `pending → confirmed → checked_in → checked_out`
+- Generate kode booking & nomor invoice otomatis
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🍽️ Food & Beverage (F&B)
+- Kategori menu (makanan, minuman, dessert, dll)
+- Tamu yang sudah *confirmed*/*checked-in* dapat memesan F&B tambahan
+- Admin F&B dapat membuat pesanan baru untuk tamu tertentu
+- Tracking status pesanan: `pending → preparing → delivered`
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 👕 Layanan Laundry
+- Manajemen item & tarif laundry (per pcs / per kg)
+- Tamu aktif dapat memesan layanan laundry
+- Tracking status: `pending → processing → done`
+- Otomatis terintegrasi ke invoice tamu
 
-## Agentic Development
+### 💳 Integrasi Pembayaran (Midtrans)
+- Pembayaran online via Midtrans Snap (Sandbox)
+- Mendukung berbagai metode: GoPay, Virtual Account, Kartu Kredit, dll
+- Invoice otomatis berubah status menjadi **lunas** setelah pembayaran berhasil
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 🧾 Invoice
+- Invoice otomatis ter-generate untuk setiap booking
+- Menampilkan rincian kamar, F&B, dan laundry dalam satu invoice
+- Fitur cetak invoice dengan tampilan rapi (print-friendly)
 
-```bash
-composer require laravel/boost --dev
+### 🎨 UI/UX
+- Desain modern dengan tema warna hijau, dibangun di atas **Tailwind CSS**
+- Animasi halus menggunakan **Alpine.js**
+- Notifikasi interaktif dengan **SweetAlert2**
+- Responsive — dapat diakses dari desktop maupun mobile
 
-php artisan boost:install
+---
+
+## 🛠️ Tech Stack
+
+| Kategori           | Teknologi                          |
+|---------------------|-------------------------------------|
+| Backend             | Laravel 13                         |
+| Frontend            | Blade, Tailwind CSS, Alpine.js     |
+| Database            | MySQL / MariaDB                    |
+| Role & Permission   | Spatie Laravel Permission          |
+| Notifikasi UI       | SweetAlert2                        |
+| Icon                | Tabler Icons                       |
+| Payment Gateway     | Midtrans (Sandbox)                 |
+| Deployment          | Railway                            |
+
+---
+
+## 📁 Struktur Role & Akses
+
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+super_admin   → akses penuh (kamar, kategori, F\&B, laundry, user, booking)
+resepsionis   → booking, check-in/out, invoice, F\&B & laundry untuk tamu
+admin_fnb     → kelola menu F\&B & pesanan masuk
 
-## Contributing
+````
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🚀 Instalasi Lokal
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Prasyarat
+- PHP 8.2+
+- Composer
+- Node.js & NPM
+- MySQL/MariaDB
 
-## Security Vulnerabilities
+### Langkah Instalasi
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+# Clone repository
+git clone <repository-url>
+cd hotel-management
 
-## License
+# Install dependency PHP
+composer install
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Install dependency JS
+npm install
+
+# Copy file environment
+cp .env.example .env
+
+# Generate application key
+php artisan key:generate
+````
+
+Atur konfigurasi database & Midtrans di file `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=hotel_management
+DB_USERNAME=root
+DB_PASSWORD=
+
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxxx
+MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxxx
+MIDTRANS_IS_PRODUCTION=false
+```
+
+Lanjutkan dengan migrasi database, seeder, dan storage link:
+
+```bash
+# Migrasi & seed database
+php artisan migrate --seed
+
+# Buat symbolic link untuk storage (upload gambar)
+php artisan storage:link
+
+# Jalankan server + Vite (development)
+composer run dev
+```
+
+Akses aplikasi di `http://localhost:8000`
+
+### Akun Default (dari seeder)
+
+| Role         | Email                  | Password    |
+|--------------|-------------------------|-------------|
+| Super Admin  | superadmin@hotel.com    | password123 |
+| Resepsionis  | resepsionis@hotel.com   | password123 |
+| Admin F&B    | fnb@hotel.com           | password123 |
+
+---
+
+## 📌 Catatan Pengembangan
+
+- Pembayaran Virtual Account (VA) di mode sandbox memerlukan konfirmasi manual melalui [Midtrans Simulator](https://simulator.sandbox.midtrans.com) karena webhook tidak dapat menjangkau environment lokal/development.
+- Status pembayaran untuk VA dapat dicek ulang secara manual melalui tombol **"Cek Status Pembayaran"** pada halaman konfirmasi.
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Setup project, autentikasi & role
+- [x] CRUD kamar, kategori, F&B, laundry
+- [x] Sistem booking online & walk-in
+- [x] Integrasi Midtrans (Sandbox)
+- [x] Invoice terintegrasi (kamar + F&B + laundry)
+- [x] Manajemen user
+- [x] Deploy ke Railway
+- [ ] Laporan & analitik (revenue, occupancy rate)
+- [ ] Notifikasi email otomatis
+- [ ] Mode produksi Midtrans
+
+---
+
+## 📄 Lisensi
+
+Project ini dibuat untuk tujuan pembelajaran dan portofolio pribadi.
+
+---
+
+<p align="center">Dibangun dengan ❤️ menggunakan Laravel — Paijo's Hotel © 2026</p>
