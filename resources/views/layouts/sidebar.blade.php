@@ -49,7 +49,7 @@
         {{-- ===== SUPER ADMIN ===== --}}
         @role('super_admin')
         <div x-show="sidebarOpen" class="px-2 pt-4 pb-1">
-            <p class="text-xs font-semibold uppercase tracking-widest" style="color:#2d5a2d;">Manajemen</p>
+            <p class="text-xs font-semibold uppercase tracking-widest" style="color:#ffffff;">Manajemen</p>
         </div>
 
         @php
@@ -64,8 +64,9 @@
         @endphp
 
         @foreach($navItems as $item)
-            <a href="{{ route($item['route']) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
-                          {{ request()->routeIs($item['match']) ? 'text-green-200' : 'hover:text-green-100' }}"
+            <a href="{{ route($item['route']) }}"
+                class="flex items-center text-white gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+                                              {{ request()->routeIs($item['match']) ? 'text-green-300' : 'hover:text-green-200' }}"
                 style="{{ request()->routeIs($item['match']) ? 'background-color:#166534;' : '' }}"
                 onmouseover="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='rgba(255,255,255,0.05)'"
                 onmouseout="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='transparent'">
@@ -85,7 +86,7 @@
         </div>
 
         {{-- Booking --}}
-        <a href="{{ route('resepsionis.bookings.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+        <a href="{{ route('resepsionis.bookings.index') }}" class="flex items-center text-white gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
                   {{ request()->routeIs('resepsionis.bookings.*') ? 'text-green-200' : 'hover:text-green-100' }}"
             style="{{ request()->routeIs('resepsionis.bookings.*') ? 'background-color:#166534;' : '' }}"
             onmouseover="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='rgba(255,255,255,0.05)'"
@@ -105,7 +106,7 @@
         </a>
 
         {{-- Laundry --}}
-        <a href="{{ route('laundry.orders.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+        <a href="{{ route('laundry.orders.index') }}" class="flex items-center text-white gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
                   {{ request()->routeIs('laundry.orders.*') ? 'text-green-200' : 'hover:text-green-100' }}"
             style="{{ request()->routeIs('laundry.orders.*') ? 'background-color:#166534;' : '' }}"
             onmouseover="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='rgba(255,255,255,0.05)'"
@@ -132,7 +133,7 @@
         </div>
 
         {{-- Pesanan Masuk --}}
-        <a href="{{ route('fnb.orders.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+        <a href="{{ route('fnb.orders.index') }}" class="flex items-center text-white gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
                   {{ request()->routeIs('fnb.orders.*') ? 'text-green-200' : 'hover:text-green-100' }}"
             style="{{ request()->routeIs('fnb.orders.*') ? 'background-color:#166534;' : '' }}"
             onmouseover="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='rgba(255,255,255,0.05)'"
@@ -152,7 +153,7 @@
         </a>
 
         {{-- Menu F&B --}}
-        <a href="{{ route('fnb.items.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
+        <a href="{{ route('fnb.items.index') }}" class="flex items-center text-white gap-3 px-3 py-2.5 rounded-xl transition-all duration-150
                   {{ request()->routeIs('fnb.items.*') ? 'text-green-200' : 'hover:text-green-100' }}"
             style="{{ request()->routeIs('fnb.items.*') ? 'background-color:#166534;' : '' }}"
             onmouseover="if(this.style.backgroundColor !== 'rgb(22, 101, 52)') this.style.backgroundColor='rgba(255,255,255,0.05)'"
